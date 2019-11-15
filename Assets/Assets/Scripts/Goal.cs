@@ -16,6 +16,9 @@ public class Goal : MonoBehaviour
                 audioSource.PlayOneShot(goalClip);
             }
             GameManager.instance.RestartLevel(1f);
+
+            var timer = FindObjectOfType<Timer>();
+            GameManager.instance.SaveTime(timer.time);
         }
     }
 
