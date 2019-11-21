@@ -5201,6 +5201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e2a6dc2a54efc148b221efd438544fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  buttonPrefab: {fileID: 0}
   playerName: 
 --- !u!4 &1283766903
 Transform:
@@ -8922,7 +8923,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41bb7ab80a6ab994096493d8c60642c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelName: Mitch's Level
+  levelName: Save
 --- !u!4 &2083574542 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4310511095343596344, guid: d86ad205da350ae48898ede0b245d446,

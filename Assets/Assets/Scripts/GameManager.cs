@@ -34,12 +34,96 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("Game");
     }
 
+    private void LoadLevelContent()
+    {
+        var existingLevelRoot = GameObject.Find("Level");
+        Destroy(existingLevelRoot);
+        var levelRoot = new GameObject("Level");
+
+        //Reads the JSON file
+        var levelFileJsonContent = File.ReadAllText(selectedLevel);
+        var levelData = JsonUtility.FromJson<LevelDataRepresentation>(levelFileJsonContent);
+        //Makes the levelData into fully populated array
+        foreach(var li in levelData.levelItems)
+        {
+            //for every item that is looped the script locates the correct prefab
+            var pieceResource = Resources.Load("Prefabs/" + li.prefabName);
+            if(pieceResource == null)
+            {
+                Debug.Log("Cannont find resource: " + li.prefabName);
+            }
+            //Initiates a clone of the prefabs
+            var piece = (GameObject)Instantiate(pieceResource, li.position, Quaternion.identity);
+            var pieceSprite = piece.GetComponent<SpriteRenderer>();
+            if(pieceSprite != null)
+            {
+                pieceSprite.sortingOrder = li.spriteOrder;
+                pieceSprite.sortingLayerName = li.spriteLayer;
+                pieceSprite.color = li.spriteColor;
+            }
+            //makes the object a child of level gameobject
+            piece.transform.parent = levelRoot.transform;
+            piece.transform.position = li.position;
+            piece.transform.rotation = Quaternion.Euler(li.rotation.x, li.rotation.y, li.rotation.z);
+            piece.transform.localScale = li.scale;
+            var SoyBoy = GameObject.Find("SoyBoy");
+            SoyBoy.transform.position = levelData.playerStartPosition;
+            Camera.main.transform.position = new Vector3(SoyBoy.transform.position.x, SoyBoy.transform.position.y, 
+                Camera.main.transform.position.z);
+            //locates the smooth follow script
+            var camSettings = FindObjectOfType<CameraLerpToTransform>();
+            //checks that the smooth follow script was found
+            if(camSettings != null)
+            {
+                camSettings.cameraZDepth =
+                    levelData.cameraSettings.cameraZDepth;
+                camSettings.camTarget = GameObject.Find(
+                    levelData.cameraSettings.cameraTrackTarget).transform;
+                camSettings.maxX = levelData.cameraSettings.maxX;
+                camSettings.maxY = levelData.cameraSettings.maxY;
+                camSettings.minX = levelData.cameraSettings.minX;
+                camSettings.minY = levelData.cameraSettings.minY;
+                camSettings.trackingSpeed =
+                    levelData.cameraSettings.trackingSpeed;
+            }
+        }
+    }
+
     private void DiscoverLevels()
     {
         var levelPanelRectTransform =
             GameObject.Find("LevelItemsPanel")
             .GetComponent<RectTransform>();
         var levelFiles = Directory.GetFiles(Application.dataPath, "*.json");
+
+        var yOffset = 0f;
+        for(var i = 0; i < levelFiles.Length; i++)
+        {
+            if(i == 0)
+            {
+                yOffset = -30f;
+            }
+            else
+            {
+                yOffset -= 65f;
+            }
+            var levelFile = levelFiles[i];
+            var levelName = Path.GetFileName(levelFile);
+            //initiates copy of button prefab
+            var levelButtonObj = (GameObject)Instantiate(buttonPrefab, Vector2.zero, Quaternion.identity);
+            //Gets its transform and makes it a child of levelitemspanel
+            var levelButtonRectTransform = levelButtonObj.GetComponent<RectTransform>();
+            levelButtonRectTransform.SetParent(levelPanelRectTransform, true);
+            //positions it bassed on a fixed x-position and yoffset
+            levelButtonRectTransform.anchoredPosition = new Vector2(215.5f, yOffset);
+            //sets the button text to the level's name
+            var levelButtonText = levelButtonObj.transform.GetChild(0).GetComponent<Text>();
+            levelButtonText.text = levelName;
+            var levelButton = levelButtonObj.GetComponent<Button>();
+            levelButton.onClick.AddListener(delegate { SetLevelName(levelFile); });
+            levelPanelRectTransform.sizeDelta = new Vector2(levelPanelRectTransform.sizeDelta.x, 60f * i);
+        }
+        levelPanelRectTransform.offsetMax = new Vector2(levelPanelRectTransform.offsetMax.x, 0f);
     }
 
     public void RestartLevel(float delay)
@@ -56,12 +140,16 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        DiscoverLevels();
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if(Input.GetKeyDown(KeyCode.Escape))
+        {
+            SceneManager.LoadScene("Menu");
+        }
     }
 
     public List<PlayerTimeEntry> LoadPreviousTimes()
@@ -69,8 +157,9 @@ public class GameManager : MonoBehaviour
         //to attempt to load saved time entries 
         try
         {
+            var levelName = Path.GetFileName(selectedLevel);
             var scoresFiles = Application.persistentDataPath +
-                "/" + playerName + "_time.dat";
+                "/" + playerName + "_" + levelName + "_time.dat";
             using (var stream = File.Open(scoresFiles, FileMode.Open))
             {
                 var bin = new BinaryFormatter();
@@ -97,8 +186,9 @@ public class GameManager : MonoBehaviour
         newTime.time = time;
         //create a binary formatter object to do the packing of the list of player names and times
         var bFormatter = new BinaryFormatter();
+        var levelName = Path.GetFileName(selectedLevel);
         var filePath = Application.persistentDataPath +
-            "/" + playerName + "_times.dat";
+            "/" + playerName + "_" + levelName + "_times.dat";
         using (var file = File.Open(filePath, FileMode.Create))
         {
             times.Add(newTime);
@@ -110,11 +200,17 @@ public class GameManager : MonoBehaviour
     {
         //collects existing items
         var times = LoadPreviousTimes();
+        var levelName = Path.GetFileName(selectedLevel);
+        if(levelName != null)
+        {
+            levelName = levelName.Replace(".json", "");
+        }
         var topThree = times.OrderBy(time => time.time).Take(3);
         //finds the previous times
         var timesLabel = GameObject.Find("PreviousTimes")
             .GetComponent<Text>();
         //changes it to show each time found
+        timesLabel.text = levelName + "\n";
         timesLabel.text = "BEST TIMES \n";
         foreach (var time in topThree)
         {
@@ -125,9 +221,16 @@ public class GameManager : MonoBehaviour
     
     private void OnSceneLoaded(Scene scene, LoadSceneMode loadsceneMode)
     {
-        if(scene.name == "Game")
-        {
-            DisplayPreviousTimes();
-        }
+       if (!string.IsNullOrEmpty(selectedLevel)
+            && scene.name == "Game")
+       {
+           Debug.Log("Loading level content for: " + selectedLevel);
+           LoadLevelContent();
+           DisplayPreviousTimes();
+       }
+       if(scene.name == "Menu")
+       {
+            DiscoverLevels();
+       }
     }
 }
