@@ -23,10 +23,11 @@ public class LevelEditor : Editor
         foreach(Transform t in levelRoot.transform)
         {
             var sr = t.GetComponent<SpriteRenderer>();
-            var li = new LevelItemRepresentation();
+            var li = new LevelItemRepresentation()
             {
-                position = t.position;
-                rotation = t.rotation;
+                position = t.position,
+                rotation = t.rotation.eulerAngles,
+                scale = t.localScale
             };
 
             if(t.name.Contains(" "))
@@ -47,5 +48,27 @@ public class LevelEditor : Editor
 
             levelItems.Add(li);
         }
+        ldr.levelItems = levelItems.ToArray();
+        ldr.playerStartPosition =
+            GameObject.Find("SoyBoy").transform.position;
+
+        var currentCamSettings = FindObjectOfType<CameraLerpToTransform>();
+        if(currentCamSettings != null)
+        {
+            ldr.cameraSettings = new CameraSettingsRepresntation()
+            {
+                cameraTrackTarget = currentCamSettings.camTarget.name,
+                cameraZDepth = currentCamSettings.cameraZDepth,
+                minX = currentCamSettings.minX,
+                minY = currentCamSettings.minY,
+                maxX = currentCamSettings.maxX,
+                maxY = currentCamSettings.maxY,
+                trackingSpeed = currentCamSettings.trackingSpeed
+            };
+        }
+        var levelDataToJson = JsonUtility.ToJson(ldr);
+        var savePath = System.IO.Path.Combine(Application.dataPath, level.levelName + ".json");
+        System.IO.File.WriteAllText(savePath, levelDataToJson);
+        Debug.Log("Level saved to " + savePath);
     }
 }

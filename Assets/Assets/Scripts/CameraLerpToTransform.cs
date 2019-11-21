@@ -7,6 +7,7 @@ public class CameraLerpToTransform : MonoBehaviour {
     //Variables to help camera target
     public Transform camTarget;
     public float trackingSpeed;
+    public float cameraZDepth;
     public float minX;
     public float minY;
     public float maxX;

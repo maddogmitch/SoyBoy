@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
+[Serializable]
 public class LevelItemRepresentation
 {
     public Vector3 rotation;

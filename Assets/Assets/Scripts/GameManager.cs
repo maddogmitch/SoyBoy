@@ -11,6 +11,8 @@ using System.Runtime.Serialization.Formatters.Binary;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
+    public GameObject buttonPrefab;
+    private string selectedLevel;
     public string playerName;
 
     void Awake()
@@ -24,6 +26,20 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void SetLevelName(string levelFilePath)
+    {
+        selectedLevel = levelFilePath;
+        SceneManager.LoadScene("Game");
+    }
+
+    private void DiscoverLevels()
+    {
+        var levelPanelRectTransform =
+            GameObject.Find("LevelItemsPanel")
+            .GetComponent<RectTransform>();
+        var levelFiles = Directory.GetFiles(Application.dataPath, "*.json");
     }
 
     public void RestartLevel(float delay)

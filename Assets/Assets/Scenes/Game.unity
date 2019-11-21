@@ -5432,6 +5432,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   camTarget: {fileID: 1198214579}
   trackingSpeed: 2.5
+  cameraZDepth: 0
   minX: -100
   minY: -100
   maxX: 100
@@ -8921,7 +8922,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41bb7ab80a6ab994096493d8c60642c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelName: 
+  levelName: Mitch's Level
 --- !u!4 &2083574542 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4310511095343596344, guid: d86ad205da350ae48898ede0b245d446,
